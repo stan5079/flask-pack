@@ -3,15 +3,14 @@ import os
 from collections import OrderedDict
 
 from bs4 import BeautifulSoup
-from jinja2.ext import Extension
-from jinja2.nodes import CallBlock
-from jinja2.parser import Parser
-from jinja2.runtime import Macro
-
 from flask_pack.config import Config
 from flask_pack.exceptions import FileTypeUnsupported
 from flask_pack.line import Line
 from flask_pack.utils import get_env_vars
+from jinja2.ext import Extension
+from jinja2.nodes import CallBlock
+from jinja2.parser import Parser
+from jinja2.runtime import Macro
 
 
 class FlaskPackExtension(Extension):
@@ -52,21 +51,20 @@ class FlaskPackExtension(Extension):
 
             if line.url:
                 tag_path = self.config.pack_find_static(line.url)
-                text = open(tag_path, 'r', encoding='utf-8')
+                code = open(tag_path, 'r', encoding='utf-8').read()
             else:
-                text = line.string
+                code = line.string
 
             try:
                 packer = self.config.pack_packers[line.mimetype]
             except KeyError:
                 raise FileTypeUnsupported
 
-            if os.path.exists(cache_path):
-                assets[cache_path] = None
-                continue
-            else:
-                packed = packer.compile(text.read())
-                assets[cache_path] = "\n" + packed
+            packed = packer.compile(code)
+            if not os.path.exists(cache_path):
+                if assets.get(cache_path) is None:
+                    assets[cache_path] = ''
+                assets[cache_path] += "\n" + packed
 
         blocks = ''
         for cache_path, asset in assets.items():
